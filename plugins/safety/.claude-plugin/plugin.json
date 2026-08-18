@@ -1,0 +1,13 @@
+{
+  "name": "safety",
+  "description": "Three guardrails that run before Claude acts: refuses irreversible shell commands, refuses to write live credentials, and flags when a credential file is opened. No configuration, no commands to remember.",
+  "version": "1.0.0",
+  "author": {
+    "name": "AvoLabs",
+    "url": "https://claudeflow.so"
+  },
+  "homepage": "https://claudeflow.so",
+  "repository": "https://github.com/avolabsmx/claudeflow",
+  "license": "MIT",
+  "keywords": ["safety", "guardrails", "hooks", "secrets", "claude-code"]
+}

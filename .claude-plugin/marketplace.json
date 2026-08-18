@@ -7,11 +7,29 @@
   },
   "plugins": [
     {
+      "name": "safety",
+      "source": "./plugins/safety",
+      "description": "Three guardrails that run before Claude acts: refuses irreversible shell commands, refuses to write live credentials, flags credential files on open. Zero config, nothing to remember.",
+      "category": "productivity",
+      "tags": [
+        "safety",
+        "guardrails",
+        "hooks",
+        "secrets"
+      ],
+      "license": "MIT"
+    },
+    {
       "name": "claude-md",
       "source": "./plugins/claude-md",
-      "description": "Generate, verify, score and trim your CLAUDE.md — the file every agent reads before it does anything.",
+      "description": "Verify your CLAUDE.md against the repository, and trim what it costs you on every request.",
       "category": "productivity",
-      "tags": ["context", "claude-md", "audit", "maintenance"],
+      "tags": [
+        "context",
+        "claude-md",
+        "audit",
+        "maintenance"
+      ],
       "license": "MIT"
     }
   ]

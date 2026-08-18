@@ -1,7 +1,7 @@
 {
   "name": "claude-md",
-  "description": "Four commands for the highest-leverage file in your project: generate a CLAUDE.md from what the repository actually contains, verify its claims against reality, score it, and trim what it costs you on every request.",
-  "version": "1.0.0",
+  "description": "Two commands for the highest-leverage file in your project: verify every claim in your CLAUDE.md against the repository, and trim what it costs you on every request.",
+  "version": "1.1.0",
   "author": {
     "name": "AvoLabs",
     "url": "https://claudeflow.so"
@@ -9,5 +9,11 @@
   "homepage": "https://claudeflow.so",
   "repository": "https://github.com/avolabsmx/claudeflow",
   "license": "MIT",
-  "keywords": ["claude-md", "context", "context-engineering", "audit", "claude-code"]
+  "keywords": [
+    "claude-md",
+    "context",
+    "context-engineering",
+    "audit",
+    "claude-code"
+  ]
 }

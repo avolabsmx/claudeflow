@@ -2,117 +2,142 @@
 
 # ◆ ClaudeFlow — free tools for Claude Code
 
-**Four commands for the highest-leverage file in your project.**
+**Guardrails that stop the accident. And a check for the file every agent reads first.**
 
 ```
 /plugin marketplace add avolabsmx/claudeflow
-/plugin install claude-md@claudeflow
+/plugin install safety@claudeflow
 ```
 
-MIT licensed. No account, no signup, no telemetry.
+MIT licensed. No account, no signup, no telemetry, no configuration.
 
 </div>
 
 ---
 
-## Why CLAUDE.md is worth four commands
+## `safety` — three guardrails, zero setup
 
-Claude Code reads your `CLAUDE.md` before every request and acts on it as fact.
-That is what makes it the highest-leverage file in the repository — and it is
-also the problem.
+Claude Code can run shell commands and write files. That is the whole point, and
+it is also why one bad expansion, one stale connection string, or one wrong
+branch is all it takes.
 
-Your code has a compiler, a linter, a test suite and a reviewer. Your
-`CLAUDE.md` has none of those. It is prose, so it never fails to build and never
-breaks a test. It just quietly stops being true, and keeps being believed.
+This plugin installs three checks that run **before** the action, not after.
+There is nothing to remember and nothing to configure — once it is installed it
+just works, forever.
 
-The script you renamed. The version that moved two majors. The directory you
-restructured last quarter. Every one of those is still in there, and every agent
-you run is still acting on it.
+| Guard | Runs on | What it does |
+| --- | --- | --- |
+| **Dangerous command** | `Bash` | Refuses commands that cannot be undone: `rm -rf /`, force push to main, `DROP DATABASE`, `docker system prune -af`, `mkfs`, `dd` to a block device, fork bombs |
+| **Secret** | `Write`, `Edit` | Refuses to write a live credential into a file — AWS keys, GitHub tokens, Slack tokens, private keys, connection strings with passwords |
+| **Sensitive read** | `Read` | Never blocks. Says out loud when the file just opened is a `.env`, an SSH key, or AWS credentials, so its contents do not end up quoted into a commit |
 
-## What you get
+### It is built to not cry wolf
 
-| Command | What it does |
-| --- | --- |
-| `/claude-md:check` | Verifies every claim in the file against the repository — commands against `package.json`, paths against the tree, versions against the lockfile. Reports what has gone stale, with line numbers. |
-| `/claude-md:init` | Writes a `CLAUDE.md` from what the repository actually contains. Never invents a command; marks real gaps as gaps. |
-| `/claude-md:audit` | Scores the file against a weighted rubric and returns the three edits that buy the most output quality per word changed. |
-| `/claude-md:trim` | Finds the lines costing you context on every request without changing any output. |
-
-Plus a `context-engineering` skill that loads whenever you are writing or
-debugging a context file.
-
-## What `check` looks like
-
-Run against a project whose `CLAUDE.md` had drifted:
+A guardrail that fires on normal work does not get fixed. It gets uninstalled,
+and takes every other check with it. So the detection is token-based rather than
+regex-on-the-raw-string, which is what lets it tell these apart:
 
 ```
-| Severity | Line | Claim                   | Reality                                          |
-| blocker  | 13   | `npm test`              | No `test` script. Closest is `test:unit`         |
-| blocker  | 19   | `src/hooks/`            | Directory does not exist                         |
-| major    | 6    | React 18                | package.json:10 pins react 19.0.0                |
+rm -rf ./node_modules              ✓ allowed
+rm -rf /                           ✗ blocked
+
+git push --force origin my-feature ✓ allowed  (normal after a rebase)
+git push --force origin main       ✗ blocked
+git push --force                   ✗ blocked only when you are on main
+
+api_key = "YOUR_API_KEY_HERE"      ✓ allowed  (a placeholder, not a secret)
+api_key = "AKIAIOSFODNN7EXAMPLE"   ✗ blocked
 ```
 
-It reports. It does not edit. You decide what is stale and what is
-aspirational-on-purpose — that distinction is invisible to a tool and obvious to
-you, which is exactly why the fix stays your call.
+Verified against 16 destructive commands and 18 everyday ones: everything
+dangerous blocked, nothing normal blocked.
 
-It also tells you what it *could not* verify. A claim with no mechanical check
-is a real result, not a gap to hide: silence would read as "verified", and that
-is the failure this whole thing exists to prevent.
+### When it gets in your way
 
-## Install
+```bash
+export CLAUDEFLOW_SAFETY_OFF=1
+```
+
+One switch, all three off for the session. Deliberately blunt — someone who
+needs a command through should get it through in five seconds, not uninstall.
+
+### What it is not
+
+This is a **guardrail, not a security boundary.** It exists to catch the
+accident: the variable that expanded to empty, the force push from the wrong
+branch, the key pasted into a config file. It does not defend against an
+attacker, and nothing here should be relied on as if it did.
+
+Requires Python 3 (already present on macOS and Linux).
+
+---
+
+## `claude-md` — check the file every agent reads first
 
 ```
-/plugin marketplace add avolabsmx/claudeflow
 /plugin install claude-md@claudeflow
 ```
 
-If the install summary says `Run /reload-plugins to activate.`, run it.
+Claude Code reads your `CLAUDE.md` before every request and acts on it as fact.
+Your code has a compiler, a linter and a test suite. That file has none of them.
+It never fails to build — it just quietly stops being true, and keeps being
+believed.
 
-Then, in any project:
+| Command | What it does |
+| --- | --- |
+| `/claude-md:check` | Verifies every claim against the repository — commands against `package.json`, paths against the tree, versions against the lockfile |
+| `/claude-md:trim` | Finds the lines costing you context on every request without changing any output |
+
+Plus a `context-engineering` skill that loads when you are writing or debugging
+a context file.
 
 ```
-/claude-md:check
+| Severity | Line | Claim        | Reality                            |
+| blocker  | 13   | `npm test`   | No `test` script. Closest: `test:unit` |
+| blocker  | 19   | `src/hooks/` | Directory does not exist           |
+| major    | 6    | React 18     | package.json:10 pins react 19.0.0  |
 ```
 
-Requires Claude Code v2.1.120 or later.
+It reports and does not edit. Whether a line is stale or aspirational-on-purpose
+is invisible to a tool and obvious to you.
+
+---
 
 ## Design rules
 
-These four commands follow the same rules the paid ClaudeFlow kits do:
+Both plugins follow the same rules the paid ClaudeFlow kits do:
 
-- **Read, never assume.** Every finding cites the file it came from. A finding
-  with no source sends someone to edit a line that was fine.
-- **Report, do not fix.** Except `init`, which writes only when no file exists —
-  and writes `CLAUDE.generated.md` when one does. Your hand-written context holds
-  things no repository states.
-- **Say what you could not check.** An unverifiable claim is reported as
-  unverifiable, never quietly omitted.
-- **No padding.** If your file is good, `audit` says so in two lines and stops.
-  An audit that manufactures findings to look thorough trains you to ignore it.
+- **Read, never assume.** Every finding cites the file it came from.
+- **Report, do not fix**, unless the fix is unambiguous.
+- **Say what you could not check.** Silence would read as "verified".
+- **Never cry wolf.** A false positive costs more than a missed edge case,
+  because it gets the whole thing removed.
+
+## Attribution
+
+The `safety` guards are derived from [Alfred Dev](https://github.com/686f6c61/alfred-dev)
+by 686f6c61 (MIT) — a full SDLC plugin for Claude Code that is worth installing
+on its own. What we changed and why is in
+[`plugins/safety/ATTRIBUTION.md`](./plugins/safety/ATTRIBUTION.md).
 
 ## Want the rest?
 
-This is the free tier, and it is genuinely free — MIT, use it anywhere, no
-strings. It is also narrow on purpose: it does one job completely rather than
-ten jobs partly.
+This is free and genuinely free — MIT, use it anywhere. It is also narrow on
+purpose: each plugin does one job completely rather than ten jobs partly.
 
-Once your context is right, [ClaudeFlow](https://claudeflow.so) is the team that
-uses it: 60 engineering agents, 24 growth agents, 128 skills and 126 curated
-slash commands, split into an Engineer Kit, a Growth Kit and a Complete Bundle.
-
-Good context makes every one of them better. That is the whole reason this
-plugin is the free one.
+[ClaudeFlow](https://claudeflow.so) is the paid tier: 60 engineering agents,
+24 growth agents, 128 skills and 126 curated slash commands, as an Engineer Kit,
+a Growth Kit, or the Complete Bundle.
 
 ## Contributing
 
-Issues and PRs welcome. If a check misses something in your project, that is a
-bug worth reporting — open an issue with the `CLAUDE.md` line and what it should
-have caught.
+If a guard blocks something normal, that is the most valuable bug report you can
+file — open an issue with the command. False positives are the failure mode we
+care most about.
 
 ## License
 
-MIT — see [LICENSE](./LICENSE). Use it in commercial projects, fork it, ship it.
+MIT — see [LICENSE](./LICENSE).
 
 > "Claude" and "Claude Code" are trademarks of Anthropic. ClaudeFlow is
 > independent and not affiliated with, endorsed by, or sponsored by Anthropic.
