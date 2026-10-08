@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "engram": {
+      "command": "bash",
+      "args": ["${workspaceFolder}/.cursor/engram.sh", "mcp", "--tools=agent"],
+      "env": {
+        "ENGRAM_CLOUD_SERVER": "${env:ENGRAM_CLOUD_SERVER}",
+        "ENGRAM_CLOUD_TOKEN": "${env:ENGRAM_CLOUD_TOKEN}",
+        "ENGRAM_CLOUD_AUTOSYNC": "1"
+      }
+    }
+  }
+}

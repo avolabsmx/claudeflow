@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "hooks": {
+    "stop": [{ "command": "bash .cursor/engram.sh flush >&2 || true" }]
+  }
+}
